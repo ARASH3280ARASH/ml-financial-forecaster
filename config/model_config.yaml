@@ -1,0 +1,116 @@
+# ─────────────────────────────────────────────────────────────
+# ML Financial Forecaster — Model Configuration
+# ─────────────────────────────────────────────────────────────
+
+data:
+  source: synthetic
+  symbol: BTCUSD
+  start_date: "2020-01-01"
+  end_date: "2025-12-31"
+  frequency: 1h
+  cache_dir: data/cache
+
+preprocessing:
+  scaling: robust  # standard | robust | minmax | none
+  outlier_std: 5.0
+  fill_method: ffill  # ffill | interpolate
+
+features:
+  technical:
+    periods: [7, 14, 21, 50, 100, 200]
+  statistical:
+    windows: [10, 20, 50, 100]
+  sentiment:
+    enabled: true
+    noise_level: 0.3
+  selection:
+    correlation_threshold: 0.95
+    min_importance: 0.01
+    max_features: 100
+
+training:
+  train_ratio: 0.70
+  val_ratio: 0.15
+  embargo_bars: 10
+  target_column: close
+  target_horizon: 1
+
+models:
+  xgboost:
+    n_estimators: 1000
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+    min_child_weight: 5
+
+  lightgbm:
+    n_estimators: 1000
+    max_depth: 7
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+    min_child_samples: 20
+
+  lstm_attention:
+    hidden_size: 128
+    num_layers: 2
+    attention_heads: 4
+    sequence_length: 60
+    dropout: 0.2
+    learning_rate: 0.001
+    epochs: 100
+    batch_size: 64
+
+  transformer:
+    d_model: 64
+    n_heads: 4
+    n_layers: 3
+    d_ff: 256
+    sequence_length: 60
+    dropout: 0.1
+    learning_rate: 0.001
+    epochs: 100
+    batch_size: 64
+
+ensemble:
+  method: weighted  # mean | weighted | median | stacking
+  models: [xgboost, lightgbm]
+
+hyperparameter_tuning:
+  n_trials: 50
+  metric: rmse
+  direction: minimize
+  cv_splits: 5
+  timeout: 3600
+
+cross_validation:
+  walk_forward:
+    n_splits: 5
+    min_train_size: 5000
+    embargo_bars: 24
+  purged_kfold:
+    n_splits: 5
+    embargo_pct: 0.01
+
+backtesting:
+  initial_capital: 100000.0
+  transaction_cost_bps: 10.0
+  slippage_bps: 5.0
+  max_position_size: 1.0
+  risk_per_trade: 0.02
+
+evaluation:
+  risk_free_rate: 0.02
+  periods_per_year: 252
+  bootstrap_samples: 10000
+  significance_level: 0.05
+
+reporting:
+  output_dir: reports
+  plot_dir: reports/plots
+  save_format: html
